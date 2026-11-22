@@ -25,9 +25,11 @@ export function Access({api,startVoice=false}:{api:RogerApi;startVoice?:boolean}
     }
   }
 
+  if(!api.requiresAccessCode||connected)return null
+
   return <form className="roger-access" onSubmit={connect}>
-    <input aria-label="Código de acesso" type="password" value={code} onChange={event=>setCode(event.target.value)} placeholder="Código de acesso" autoComplete="off"/>
-    <button type="submit">{connected?'Reconectar':'Conectar'}</button>
+    <input aria-label="Código de acesso" type="password" required value={code} onChange={event=>setCode(event.target.value)} placeholder="Código de acesso" autoComplete="off"/>
+    <button type="submit">Conectar</button>
     {message&&<p role="status">{message}</p>}
   </form>
 }

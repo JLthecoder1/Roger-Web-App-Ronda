@@ -1,3 +1,4 @@
+import {Access} from './lib/access'
 import { useCallback,useEffect,useRef,useState } from 'react'
 import { RoundCamera } from './lib/round-camera'
 import { prepareRoundPhoto } from './lib/round-photo'
@@ -94,9 +95,11 @@ export function App() {
   useEffect(()=>{
     selectOfficer(window.sessionStorage.getItem('roger:rondista')??'')
     const update=()=>void refresh()
+    window.addEventListener('roger:credentials',update)
     const polling=window.setInterval(update,2500)
     update()
     return ()=>{
+      window.removeEventListener('roger:credentials',update)
       window.clearInterval(polling)
       controller.current?.abort()
       if(timer.current)clearTimeout(timer.current)
@@ -158,6 +161,7 @@ export function App() {
         </header>
 
         <div className="divider" />
+        <Access api={api}/>
 
         <div className="status">
           <p className={isActive ? 'eyebrow live' : 'eyebrow'}>

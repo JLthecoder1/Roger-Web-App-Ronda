@@ -6,6 +6,7 @@ export function createApi(origin:string,role:string){
 
   return {
     role,
+    requiresAccessCode: !/^https?:\/\/(localhost|127\.0\.0\.1):4001$/i.test(baseUrl),
     get connected(){return Boolean(accessCode)},
     code(){return accessCode},
     setAccessCode(code:string){accessCode=code.trim()},
