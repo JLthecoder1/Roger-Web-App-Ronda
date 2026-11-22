@@ -172,3 +172,16 @@ button { font: inherit; }
   .app-shell { padding: 0; }
   .ronda { min-height: 100dvh; }
 }
+
+.roger-access{display:grid;gap:6px;margin:8px 0;font-size:14px}
+.roger-access input,.roger-access button,.roger-access-button{border:1px solid #414147;background:#19191c;color:#fff;border-radius:6px;padding:9px}
+
+.checkpoint-content { flex: 1; }
+.task-list { margin: 8px 0; padding-left: 14px; overflow-wrap: anywhere; font-size: 13px; }
+.task-list li { margin-block: 8px; }
+.task-result { display: block; color: #c0c6c8; font-size: 11px; }
+.task-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.task-actions button { padding: 5px 8px; border: 1px solid #777; border-radius: 6px; color: inherit; background: transparent; }
+.task-actions button:disabled { opacity: .5; }
+
+.risk-notice { padding: 12px; border: 2px solid #f25d5d; border-radius: 10px; background: #421b1b; color: #fff; }

@@ -1,0 +1,22 @@
+export type RogerApi=ReturnType<typeof createApi>
+
+export function createApi(origin:string,role:string){
+  let accessCode=''
+  const baseUrl=origin.replace(/\/$/,'')
+  return {
+    role,
+    get connected(){return Boolean(accessCode)},
+    code(){return accessCode},
+    setAccessCode(code:string){accessCode=code.trim()},
+    clearAccessCode(){accessCode=''},
+    async request<T>(path:string,init:RequestInit={}){
+      const headers=new Headers(init.headers)
+      if(accessCode) headers.set('Authorization',`Bearer ${accessCode}`)
+      if(init.body&&!headers.has('Content-Type')) headers.set('Content-Type','application/json')
+      const response=await fetch(`${baseUrl}${path}`,{...init,headers})
+      const body=await response.json().catch(()=>null)
+      if(!response.ok) throw new Error(body?.error??`A API respondeu com HTTP ${response.status}.`)
+      return body as T
+    }
+  }
+}
