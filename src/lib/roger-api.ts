@@ -2,7 +2,10 @@ export type RogerApi = ReturnType<typeof createApi>
 
 export function createApi(origin:string,role:string){
   let accessCode=''
-  const baseUrl=origin.replace(/\/$/,'')
+  const configured=origin.trim()
+  // Accept a Railway hostname pasted without the HTTPS scheme.
+  const address=/^[a-z0-9.-]+\.up\.railway\.app\/?$/i.test(configured)?'https://'+configured:configured
+  const baseUrl=address.replace(/\/$/,'')
 
   return {
     role,
