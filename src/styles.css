@@ -185,3 +185,9 @@ button { font: inherit; }
 .task-actions button:disabled { opacity: .5; }
 
 .risk-notice { padding: 12px; border: 2px solid #f25d5d; border-radius: 10px; background: #421b1b; color: #fff; }
+
+.round-camera { width: min(520px, calc(100% - 24px)); max-height: 92dvh; border: 1px solid #474d50; border-radius: 12px; padding: 16px; background: #151718; color: #fff; }
+.round-camera::backdrop { background: rgb(0 0 0 / 80%); }
+.round-camera h2 { margin-top: 0; }
+.round-camera video:not([hidden]) { display: block; width: 100%; max-height: 60dvh; object-fit: contain; background: #000; }
+.round-camera-actions { display: grid; gap: 8px; margin-top: 12px; }

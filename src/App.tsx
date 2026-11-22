@@ -1,4 +1,5 @@
 import { useCallback,useEffect,useRef,useState } from 'react'
+import { RoundCamera } from './lib/round-camera'
 import { prepareRoundPhoto } from './lib/round-photo'
 import { VoiceButton } from './lib/voice'
 import { createApi } from './lib/roger-api'
@@ -12,6 +13,8 @@ import {
   Square,
   X,
 } from 'lucide-react'
+
+const seenRiskKey='roger:ronda:last-seen-risk'
 
 const api=createApi(import.meta.env.VITE_API_URL??'http://localhost:4001','ronda')
 type Task={id:string;checkpoint_id:string;parent_id:string|null;title:string}
@@ -39,6 +42,7 @@ export function App() {
   }
   const [busy,setBusy]=useState(false)
   const [sendingPhoto,setSendingPhoto]=useState(false)
+  const [cameraOpen,setCameraOpen]=useState(false)
   const photoInput=useRef<HTMLInputElement>(null)
   const [message,setMessage]=useState<string|null>(null)
   const [showCheckpoints,setShowCheckpoints]=useState(false)
@@ -46,7 +50,13 @@ export function App() {
   const timer=useRef<ReturnType<typeof setTimeout>|null>(null)
   const activeRound=state?.round&&!state.round.finished_at?state.round:null
   const isActive=Boolean(activeRound)
-  const riskActive=Boolean(state?.riskAlertId)
+  const riskId=state?.riskAlertId
+  const riskActive=Boolean(riskId)
+  const [seenBeforeOpening]=useState(()=>window.sessionStorage.getItem(seenRiskKey))
+  const showRiskNotice=Boolean(riskId&&riskId!==seenBeforeOpening)
+  useEffect(()=>{
+    if(showRiskNotice&&riskId)window.sessionStorage.setItem(seenRiskKey,riskId)
+  },[riskId,showRiskNotice])
   const checkpoints=state?.checkpoints??[]
   const completed=new Set(isActive?state?.checks.map(check=>check.id):[])
   const next=checkpoints.find(point=>!completed.has(point.id))
@@ -110,14 +120,10 @@ export function App() {
     finally{setBusy(false)}
   }
 
-  async function sendPhoto(file:File){
+  async function sendPhoto(photo:Blob){
     if(!activeRound||sendingPhoto)return
     setSendingPhoto(true)
     try{
-      const photo=await prepareRoundPhoto(file).catch(error=>{
-        if(error instanceof DOMException)throw new Error('Não foi possível abrir essa imagem. Tente tirar outra foto.')
-        throw error
-      })
       await api.request('/api/rounds/'+activeRound.id+'/photos?officer='+encodeURIComponent(activeRound.officer),{
         method:'POST',headers:{'Content-Type':'image/jpeg'},body:photo
       })
@@ -158,7 +164,7 @@ export function App() {
             <span className="status-dot" />
             {isActive ? 'Em andamento' : 'Pronto para iniciar'}
           </p>
-          {riskActive&&<section role="alert" className="risk-notice">
+          {showRiskNotice&&<section role="alert" className="risk-notice">
             <strong>EMERGÊNCIA · RISCO ATIVO</strong>
             <p>Alerta enviado ao painel do supervisor. Voz suspensa até uma nova ronda.</p>
           </section>}
@@ -188,9 +194,9 @@ export function App() {
           <input ref={photoInput} type="file" accept="image/*" capture="environment" hidden onChange={event=>{
             const file=event.currentTarget.files?.[0]
             event.currentTarget.value=''
-            if(file)void sendPhoto(file)
+            if(file)void prepareRoundPhoto(file).then(sendPhoto).catch(()=>showMessage('Não foi possível abrir essa imagem. Tente tirar outra foto.'))
           }}/>
-          <button className="action" type="button" disabled={!activeRound||sendingPhoto} onClick={()=>photoInput.current?.click()}>
+          <button className="action" type="button" disabled={!activeRound||sendingPhoto} onClick={()=>setCameraOpen(true)}>
             <Camera aria-hidden="true" />
             <span>{sendingPhoto?'Enviando foto…':'Tirar foto'}</span>
           </button>
@@ -205,7 +211,7 @@ export function App() {
             <span>Finalizar ronda</span>
           </button>
 
-          {!riskActive&&<VoiceButton autoStart api={api} onSession={setVoiceSession} getOfficer={getOfficer} className="action"/>}
+          {!riskActive&&<VoiceButton api={api} onSession={setVoiceSession} getOfficer={getOfficer} className="action"/>}
         </nav>
 
         <footer className="app-footer" aria-label="Marca ROGER">
@@ -274,6 +280,13 @@ export function App() {
         </div>
       )}
 
+      {cameraOpen&&activeRound&&<RoundCamera onClose={()=>setCameraOpen(false)} onCapture={photo=>{
+        setCameraOpen(false)
+        void sendPhoto(photo)
+      }} onNativeCapture={()=>{
+        setCameraOpen(false)
+        photoInput.current?.click()
+      }}/>}
       {message && <div className="toast" role="status">{message}</div>}
     </main>
   )
