@@ -191,3 +191,11 @@ button { font: inherit; }
 .round-camera h2 { margin-top: 0; }
 .round-camera video:not([hidden]) { display: block; width: 100%; max-height: 60dvh; object-fit: contain; background: #000; }
 .round-camera-actions { display: grid; gap: 8px; margin-top: 12px; }
+
+.roger-device-picker{width:min(440px,calc(100% - 32px));padding:20px;border:1px solid #4b5153;border-radius:12px;background:#181b1d;color:#fff}
+.roger-device-picker::backdrop{background:#000a}
+.roger-device-picker h2{margin:0 0 16px}
+.roger-device-picker label{display:grid;gap:6px}
+.roger-device-picker select,.roger-device-picker button{padding:8px;border:1px solid #62686b;border-radius:6px;background:#292d30;color:inherit}
+.roger-device-picker select{width:100%;min-width:0}
+.roger-device-picker>div{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}

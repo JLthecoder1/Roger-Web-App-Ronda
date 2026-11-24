@@ -2,6 +2,7 @@
 
 import {useEffect,useRef,useState,type ReactNode} from 'react'
 import type {IAgoraRTCClient,IMicrophoneAudioTrack,IRemoteAudioTrack,IRemoteVideoTrack} from 'agora-rtc-sdk-ng'
+import {DevicePicker} from './device-picker'
 import type {RogerApi} from './roger-api'
 
 type Session={id:string;appId:string;channel:string;uid:number;agentUid:number;avatarUid?:number|null;token:string;ttl:number}
@@ -21,6 +22,7 @@ export function VoiceButton({api,className,idleLabel="Falar com Roger",icon,onVi
  const mounted=useRef(true)
  const [phase,setPhase]=useState<'idle'|'connecting'|'active'>('idle')
  const [message,setMessage]=useState('')
+ const [choosingDevice,setChoosingDevice]=useState(false)
  const [audioBlocked,setAudioBlocked]=useState(false)
  useEffect(()=>{
   mounted.current=true
@@ -45,7 +47,7 @@ export function VoiceButton({api,className,idleLabel="Falar com Roger",icon,onVi
   }
   if(mounted.current)setPhase('idle')
  }
- async function start(){
+ async function start(microphoneId:string){
   if(active.current)return
   const call:Call={closed:false}
   active.current=call
@@ -55,7 +57,7 @@ export function VoiceButton({api,className,idleLabel="Falar com Roger",icon,onVi
   try{
    const {default:rtc}=await import('agora-rtc-sdk-ng')
    if(call.closed)return
-   call.microphone=await rtc.createMicrophoneAudioTrack()
+   call.microphone=await rtc.createMicrophoneAudioTrack(microphoneId?{microphoneId}:undefined)
    if(call.closed){call.microphone.close();return}
    const session=await api.request<Session>('/api/voice/start',{method:'POST',body:JSON.stringify({officer:getOfficer?.()})})
    call.id=session.id
@@ -81,7 +83,10 @@ export function VoiceButton({api,className,idleLabel="Falar com Roger",icon,onVi
     try{
      await client.subscribe(user,media)
      if(call.closed)return
-     if(isVoice)user.audioTrack?.play()
+     if(isVoice&&user.audioTrack){
+      call.audio=user.audioTrack
+      call.audio.play()
+     }
      if(isAvatar)onVideo(user.videoTrack??null)
     }
     catch{if(mounted.current&&!call.closed)setMessage('Não foi possível reproduzir a voz do Roger.')}
@@ -124,7 +129,11 @@ export function VoiceButton({api,className,idleLabel="Falar com Roger",icon,onVi
   }
  }
  return <>
-  <button type="button" className={className} disabled={phase==='connecting'} onClick={()=>phase==='active'?stop():start()}>{icon}{phase==='active'?'Encerrar conversa':phase==='connecting'?'Conectando…':idleLabel}</button>
+  {choosingDevice&&<DevicePicker kind="audioinput" onClose={()=>setChoosingDevice(false)} onSelect={id=>{
+   setChoosingDevice(false)
+   void start(id)
+  }}/>}
+  <button type="button" className={className} disabled={phase==='connecting'} onClick={()=>phase==='active'?stop():setChoosingDevice(true)}>{icon}{phase==='active'?'Encerrar conversa':phase==='connecting'?'Conectando…':idleLabel}</button>
   {audioBlocked&&phase==='active'&&<button type="button" onClick={()=>{
    setAudioBlocked(false)
    active.current?.audio?.play()

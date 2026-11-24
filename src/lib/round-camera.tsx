@@ -1,11 +1,21 @@
 import {useEffect,useRef,useState} from 'react'
+import {DevicePicker} from './device-picker'
 import {encodeRoundPhoto} from './round-photo'
 
-export function RoundCamera({onClose,onCapture,onNativeCapture}:{
+type RoundCameraProps={
  onClose:()=>void
  onCapture:(photo:Blob)=>void
  onNativeCapture:()=>void
-}){
+}
+
+export function RoundCamera(props:RoundCameraProps){
+ const [deviceId,setDeviceId]=useState<string|null>(null)
+ return deviceId===null?
+  <DevicePicker kind="videoinput" defaultLabel="Câmera traseira (se disponível)" onClose={props.onClose} onSelect={setDeviceId}/>:
+  <RoundCameraPreview {...props} deviceId={deviceId}/>
+}
+
+function RoundCameraPreview({onClose,onCapture,onNativeCapture,deviceId}:RoundCameraProps&{deviceId:string}){
  const dialog=useRef<HTMLDialogElement>(null)
  const video=useRef<HTMLVideoElement>(null)
  const [ready,setReady]=useState(false)
@@ -18,7 +28,7 @@ export function RoundCamera({onClose,onCapture,onNativeCapture}:{
   void (async()=>{
    try{
     if(!navigator.mediaDevices?.getUserMedia)throw new Error('camera')
-    const camera=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false})
+    const camera=await navigator.mediaDevices.getUserMedia({video:deviceId?{deviceId:{exact:deviceId}}:{facingMode:{ideal:'environment'}},audio:false})
     if(closed){camera.getTracks().forEach(track=>track.stop());return}
     stream=camera
     if(video.current)video.current.srcObject=camera
@@ -27,7 +37,7 @@ export function RoundCamera({onClose,onCapture,onNativeCapture}:{
    }
   })()
   return ()=>{closed=true;stream?.getTracks().forEach(track=>track.stop())}
- },[])
+ },[deviceId])
  async function capture(){
   const frame=video.current
   if(!frame||!frame.videoWidth||capturing)return
